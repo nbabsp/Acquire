@@ -50,43 +50,27 @@ public class TileList {
         return tiles;
     }
 
-    public List<Tile> adjacent(Tile tile) {
-        List<Tile> adjacentList = new ArrayList<>();
-        for(Tile t : tiles) {
+    public TileList adjacentTilesExtended(Tile tile) {
+        TileList adjacentList = new TileList();
+        TileList oldAdjacentList = new TileList();
+        for (Tile t : tiles) {
             if (t.isAdjacent(tile)) {
                 adjacentList.add(t);
             }
         }
+        while(!adjacentList.equals(oldAdjacentList)) {
+            oldAdjacentList.replaceAll(adjacentList);
+            for (int i = 0; i < adjacentList.getSize(); i++) {
+                for (Tile t2 : tiles) {
+                    if (t2.isAdjacent(adjacentList.getTile(i)) && !adjacentList.contains(t2.getName())) {
+                        adjacentList.add(t2);
+                    }
+                }
+            }
+        }
+
         return adjacentList;
     }
-
-
-    //TODO tiles next to eachother need to both be counted for adjacent
-//    public List<Tile> adjacent(Tile tile) {
-//        List<Tile> adjacentList = new ArrayList<>();
-//        for(Tile t : tiles) {
-//            if (t.isAdjacent(tile)) {
-//                adjacentList.add(t);
-//
-//                for(Tile t2 : adjacentExcept(t, adjacentList)) {
-//                    if(!adjacentList.contains(t2)) {
-//                        adjacentList.add(t2);
-//                    }
-//                }
-//            }
-//        }
-//        return adjacentList;
-//    }
-//
-//    public List<Tile> adjacentExcept(Tile tile, List<Tile> tileList) {
-//        List<Tile> adjacentList = new ArrayList<>();
-//        for(Tile t : tiles) {
-//            if (t.isAdjacent(tile) && !tileList.contains(tile)) {
-//                adjacentList.add(t);
-//            }
-//        }
-//        return adjacentList;
-//    }
 
     public TileList adjacentTiles(Tile tile) {
         TileList adjacentList = new TileList();
@@ -114,6 +98,26 @@ public class TileList {
             }
         }
         return null;
+    }
+
+    public boolean equals(TileList t) {
+        if(tiles.size() != t.getSize()) {
+            return false;
+        }
+        sort();
+        t.sort();
+
+        for(int i = 0; i < tiles.size(); i++) {
+            if(!tiles.get(i).getName().equals(t.getTile(i).getName())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public void replaceAll(TileList tileList) {
+        tiles.clear();
+        add(tileList);
     }
 
     public Tile getTile(int n) {

@@ -32,7 +32,6 @@ public class Hotel implements Comparable<Hotel>{
             if (i >= amount) {
                 return;
             }
-            
             if (s.getOwner().equals(this.name)) {
                 s.changeOwner(name);
                 i++;
@@ -41,14 +40,14 @@ public class Hotel implements Comparable<Hotel>{
     }
 
     public void returnStocks(String name, int amount) {
-        int i = 1;
+        int i = 0;
         for(Stock s : stocks) {
+            if (i >= amount) {
+                return;
+            }
             if (s.getOwner().equals(name)) {
                 s.changeOwner(this.name);
                 i++;
-            }
-            if (i >= amount) {
-                return;
             }
         }
     }

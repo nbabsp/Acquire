@@ -97,6 +97,18 @@ public class GameMaster {
         nextPlayer = players.get((players.indexOf(nextPlayer) + 1 ) % players.size());
     }
 
+    public void gameOver() {
+        printBoard();
+        printStocksTable();
+        Player winner = nextPlayer;
+        for(Player p : players) {
+            if (p.getTotalAssets() > winner.getTotalAssets()) {
+                winner = p;
+            }
+        }
+        System.out.println("\nThe winner is... " + winner.getName().toUpperCase());
+    }
+
     private void playTile() {
         playedTile = getPlayedTile();
         List<Hotel> adjacentHotels = adjacentHotels(playedTile);
@@ -106,13 +118,13 @@ public class GameMaster {
         if (adjacentHotels.size() >= 2) {
             merge();
         } else if (adjacentHotels.size() == 1) {
-            TileList adjTiles = board.getTiles().adjacentTiles(playedTile);
+            TileList adjTiles = board.getTiles().adjacentTilesExtended(playedTile);
             board.getTiles().remove(adjTiles);
 
             adjacentHotels.get(0).tileList.add(playedTile);
             adjacentHotels.get(0).tileList.add(adjTiles);
 
-        } else if(board.getTiles().adjacent(playedTile).size() > 0) {
+        } else if(board.getTiles().adjacentTiles(playedTile).getSize() > 0) {
             newChain();
         } else {
             board.add(playedTile);
@@ -120,6 +132,15 @@ public class GameMaster {
     }
 
     private void print() {
+        printStocksTable();
+
+        printBoard();
+
+        System.out.println("\nPlayer " + nextPlayer.getName() + ":");
+        nextPlayer.printInfo();
+    }
+
+    private void printStocksTable() {
         for(Player p : players) {
             int assets = p.getMoney();
             for (Hotel h : hotels) {
@@ -128,7 +149,7 @@ public class GameMaster {
             p.setTotalAssets(assets);
         }
 
-            int counter = 31;
+        int counter = 31;
         for(Player p : players) {
             counter += (p.getName().length() > String.valueOf(p.getTotalAssets()).length() ? p.getName().length() : String.valueOf(p.getTotalAssets()).length()) + 3;
         }
@@ -164,8 +185,9 @@ public class GameMaster {
             System.out.printf("%" + (p.getName().length() > String.valueOf(p.getTotalAssets()).length() ? p.getName().length() : String.valueOf(p.getTotalAssets()).length()) + "d | ", p.getTotalAssets());
         }
         System.out.print(separator + "\n");
+    }
 
-
+    private void printBoard() {
         TileList hotelTiles = new TileList();
         for(Hotel h : hotels) {
             hotelTiles.getTiles().addAll(h.tileList.getTiles());
@@ -202,18 +224,12 @@ public class GameMaster {
             }
             System.out.println("\n-------------------------------------------------------------");
         }
-
-
-
-        System.out.println("\nPlayer " + nextPlayer.getName() + ":");
-        nextPlayer.printInfo();
-
     }
 
     private List<Hotel> adjacentHotels(Tile t) {
         List<Hotel> h = new ArrayList<>();
         for (Hotel hotel : hotels) {
-            if (hotel.tileList.adjacent(t).size() > 0) {
+            if (hotel.tileList.adjacentTiles(t).getSize() > 0) {
                 h.add(hotel);
             }
         }
@@ -239,7 +255,7 @@ public class GameMaster {
                     hotelExistsCount++;
                 }
 
-                if (hotel.tileList.adjacent(playedTile).size() > 0 && hotel.isSafe()) {
+                if (hotel.tileList.adjacentTiles(playedTile).getSize() > 0 && hotel.isSafe()) {
                     adjacent11HotelCount++;
                 }
             }
@@ -249,7 +265,7 @@ public class GameMaster {
                 input = s.nextLine();
                 continue;
             }
-            if (adjacentHotels(playedTile).size() == 0 && (board.getTiles().adjacent(playedTile).size() > 0 && hotelExistsCount == 7)) {
+            if (adjacentHotels(playedTile).size() == 0 && (board.getTiles().adjacentTiles(playedTile).getSize() > 0 && hotelExistsCount == 7)) {
                 System.out.println("Can't create a new hotel");
                 input = s.nextLine();
                 continue;
@@ -263,14 +279,10 @@ public class GameMaster {
     }
 
     private void merge() {
-        List<Hotel> mergers = new ArrayList<>();
-        for(Hotel h : hotels){
-            if(h.tileList.adjacent(playedTile).size() > 0) {
-                mergers.add(h);
-            }
-        }
+        List<Hotel> mergeringHotels = new ArrayList<>();
 
-        Collections.sort(mergers);
+        mergeringHotels.addAll(adjacentHotels(playedTile));
+        Collections.sort(mergeringHotels);
 
 
         //majority and minority
@@ -280,87 +292,88 @@ public class GameMaster {
         minority.add(nextPlayer);
 
         for(Player p : players) {
-           if(mergers.get(0).getStocks(p.getName()) > mergers.get(0).getStocks(majority.get(0).getName())) {
+           if(mergeringHotels.get(0).getStocks(p.getName()) > mergeringHotels.get(0).getStocks(majority.get(0).getName())) {
                minority.clear();
                minority.addAll(majority);
+               majority.clear();
                majority.add(p);
-           } else if(mergers.get(0).getStocks(p.getName()) == mergers.get(0).getStocks(majority.get(0).getName())) {
+           } else if(mergeringHotels.get(0).getStocks(p.getName()) == mergeringHotels.get(0).getStocks(majority.get(0).getName())) {
                majority.add(p);
-           } else if(mergers.get(0).getStocks(p.getName()) > mergers.get(0).getStocks(minority.get(0).getName())) {
+           } else if(mergeringHotels.get(0).getStocks(p.getName()) > mergeringHotels.get(0).getStocks(minority.get(0).getName())) {
                minority.clear();
-               majority.add(p);
-           } else if(mergers.get(0).getStocks(p.getName()) == mergers.get(0).getStocks(minority.get(0).getName())) {
-               majority.add(p);
+               minority.add(p);
+           } else if(mergeringHotels.get(0).getStocks(p.getName()) == mergeringHotels.get(0).getStocks(minority.get(0).getName())) {
+               minority.add(p);
            }
         }
 
-        if(majority.size() >= 1) {
+        if(majority.size() > 1) {
             for (Player p : majority) {
-                p.addMoney(((int) (((mergers.get(0).cost() * 15 / (double) majority.size()) + 99) / 100) * 100));
+                p.addMoney(((int) (((mergeringHotels.get(0).cost() * 15 / (double) majority.size()) + 99) / 100) * 100));
             }
         }
         else  {
-            majority.get(0).addMoney(((int)(((mergers.get(0).cost() * 10 / (double)majority.size()) + 99) / 100) * 100));
+            majority.get(0).addMoney(((int)(((mergeringHotels.get(0).cost() * 10 / (double)majority.size()) + 99) / 100) * 100));
 
             for(Player p : minority) {
-                p.addMoney(((int)(((mergers.get(0).cost() * 5 / (double)minority.size()) + 99) / 100) * 100));
+                p.addMoney(((int)(((mergeringHotels.get(0).cost() * 5 / (double)minority.size()) + 99) / 100) * 100));
             }
         }
 
         for(int i = 0; i < players.size(); i++) {
-            Player p;
-            if (players.indexOf(nextPlayer) + i < players.size()) {
-                p = players.get(players.indexOf(nextPlayer) + i);
-            } else {
-                p = players.get(players.indexOf(nextPlayer) + i - players.size());
-            }
+            Player p = players.get((players.indexOf(nextPlayer) + i ) % players.size());
 
-            int extraStocks = mergers.get(0).getStocks(p.getName());
+
+            int extraStocks = mergeringHotels.get(0).getStocks(p.getName());
             int keptStock = 0;
             while(extraStocks > 0) {
-                print();
+                printStocksTable();
+                System.out.println("\nPlayer " + p.getName() + ":");
 
                 String input;
                 //sell stock
                 input = "";
-                while (!input.matches("[0-" + mergers.get(0).getStocks(p.getName()) + "]")) {
-                    System.out.println("How many " + mergers.get(0).getName() + " stocks do you want to sell?");
+                while (!input.matches("[0-" + extraStocks + "]")) {
+                    System.out.println("How many " + mergeringHotels.get(0).getName() + " stocks do you want to sell?");
                     input = s.nextLine();
-                    p.addMoney(mergers.get(0).cost());
-                    mergers.get(0).returnStocks(p.getName(), Integer.parseInt(input));
+                    p.addMoney(mergeringHotels.get(0).cost() * Integer.parseInt(input));
+                    mergeringHotels.get(0).returnStocks(p.getName(), Integer.parseInt(input));
 
                 }
-                extraStocks = mergers.get(0).getStocks(p.getName()) - keptStock;
+                extraStocks = mergeringHotels.get(0).getStocks(p.getName()) - keptStock;
                 if(extraStocks == 0) {
                     continue;
                 }
 
                 //trade stock
                 input = "";
-                while (!input.matches("[0-" + mergers.get(0).getStocks(p.getName()) + "]") || Integer.parseInt(input) % 2 != 0 || mergers.get(1).getStocks(mergers.get(1).getName()) < Integer.parseInt(input) / 2) {
-                    System.out.println("How many " + mergers.get(0).getName() + " stocks do you want to sell?");
+                while (!input.matches("[0-" + extraStocks + "]") || Integer.parseInt(input) % 2 != 0 || mergeringHotels.get(1).getStocks(mergeringHotels.get(1).getName()) < Integer.parseInt(input) / 2) {
+                    System.out.println("How many " + mergeringHotels.get(0).getName() + " stocks do you want to trade for " + mergeringHotels.get(1).getName() + " stocks ?");
                     input = s.nextLine();
-                    mergers.get(0).returnStocks(p.getName(), Integer.parseInt(input));
-                    mergers.get(1).setStocks(p.getName(), Integer.parseInt(input) / 2);
+                    mergeringHotels.get(0).returnStocks(p.getName(), Integer.parseInt(input));
+                    mergeringHotels.get(1).setStocks(p.getName(), Integer.parseInt(input) / 2);
                 }
-                extraStocks = mergers.get(0).getStocks(p.getName()) - keptStock;
+                extraStocks = mergeringHotels.get(0).getStocks(p.getName()) - keptStock;
                 if(extraStocks == 0) {
                     continue;
                 }
 
                 //keep stock
                 input = "";
-                while (!input.matches("[0-" + (mergers.get(0).getStocks(p.getName()) - keptStock) + "]")) {
-                    System.out.println("How many " + mergers.get(0).getName() + " stocks do you want to sell?");
+                while (!input.matches("[0-" + extraStocks + "]")) {
+                    System.out.println("How many " + mergeringHotels.get(0).getName() + " stocks do you want to keep?");
                     input = s.nextLine();
                     keptStock += Integer.parseInt(input);
                 }
-                extraStocks = mergers.get(0).getStocks(p.getName()) - keptStock;
+                extraStocks = mergeringHotels.get(0).getStocks(p.getName()) - keptStock;
             }
         }
 
-        mergers.get(1).tileList.getTiles().addAll(mergers.get(0).tileList.getTiles());
-        mergers.get(0).tileList.getTiles().clear();
+        mergeringHotels.get(1).tileList.add(playedTile);
+        mergeringHotels.get(1).tileList.add(board.getTiles().adjacentTiles(playedTile));
+
+        mergeringHotels.get(1).tileList.add(mergeringHotels.get(0).tileList);
+        mergeringHotels.get(0).tileList.getTiles().clear();
     }
 
     private void newChain() {
@@ -375,7 +388,7 @@ public class GameMaster {
             System.out.println("That hotel already exists.");
         }
 
-        TileList adjTiles = board.getTiles().adjacentTiles(playedTile);
+        TileList adjTiles = board.getTiles().adjacentTilesExtended(playedTile);
         board.getTiles().remove(adjTiles);
 
         newHotel.tileList.add(playedTile);
@@ -404,7 +417,7 @@ public class GameMaster {
             if(hotel == null) {
                 return -1;
             }
-            if(hotel.getStocks(hotel.getName()) > 0) {
+            if(hotel.getStocks(hotel.getName()) > 0 && hotel.exists()) {
                 break;
             }
             System.out.println("That hotel has no available stock.");
