@@ -39,12 +39,12 @@ public class GameMaster {
 
     public void newGame() {
         //query players
-        System.out.println("Player 1: ");
+        System.out.print("Player 1: ");
         String input = s.nextLine();
         int j = 2;
-        while(!input.equals("d")) {
+        while(j <= 6 && (!input.equals("d") || j == 2)) {
             players.add(new Player(input));
-            System.out.println("Player " + j + ": ");
+            System.out.print("Player " + j + ": ");
             input = s.nextLine();
             j++;
         }

@@ -8,5 +8,6 @@ public class Main {
         while(g.playing()) {
             g.turn();
         }
+        g.gameOver();
     }
 }
