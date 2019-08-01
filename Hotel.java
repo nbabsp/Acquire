@@ -1,10 +1,16 @@
 package DataModel;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 public class Hotel implements Comparable<Hotel>{
     private String name;
     private String color;
     private Integer price;
     private Stock[] stocks;
+    private HashMap<String, List<Stock>> stocks2;
     TileList tileList;
 
     public Hotel(String name, String color, Integer price) {
@@ -14,6 +20,22 @@ public class Hotel implements Comparable<Hotel>{
         stocks = new Stock[25];
         for (int i = 0; i < stocks.length; i++) {
             stocks[i] = new Stock(name);
+        }
+        tileList = new TileList();
+    }
+
+    public Hotel(String name, String color, Integer price, List<Player> players) {
+        this.name = name;
+        this.color = color;
+        this.price = price;
+        stocks2 = new HashMap<>();
+        List<Stock> hotelStocks = new ArrayList<>();
+        for(int i = 0; i < 25; i++) {
+            hotelStocks.add(new Stock(name));
+        }
+        stocks2.put(name, hotelStocks);
+        for (Player p : players) {
+            stocks2.put(p.getName(), new ArrayList<Stock>());
         }
         tileList = new TileList();
     }
@@ -74,8 +96,76 @@ public class Hotel implements Comparable<Hotel>{
         return tileList.getSize() > 0;
     }
 
+    public List<String> majority() {
+        HashMap<String, Integer> hashMap = new HashMap<>();
+
+        for(Stock s : stocks) {
+            if(!s.getOwner().equals(name)) {
+                if(hashMap.get(s.getOwner()) != null) {
+                    hashMap.put(s.getOwner(), hashMap.get(s.getOwner() + 1));
+                } else {
+                    hashMap.put(s.getOwner(), 1);
+                }
+            }
+        }
+
+        int max = 0;
+        for(Map.Entry<String, Integer> entry : hashMap.entrySet()) {
+            if(entry.getValue() > max) {
+                max = entry.getValue();
+            }
+        }
+        List<String> players = new ArrayList<>();
+        for(Map.Entry<String, Integer> entry : hashMap.entrySet()) {
+            if(entry.getValue() == max) {
+                players.add(entry.getKey());
+            }
+        }
+        return players;
+
+    }
+
+    public List<String> minority() {
+        HashMap<String, Integer> hashMap = new HashMap<>();
+
+        for(Stock s : stocks) {
+            if(!s.getOwner().equals(name)) {
+                if(hashMap.get(s.getOwner()) != null) {
+                    hashMap.put(s.getOwner(), hashMap.get(s.getOwner() + 1));
+                } else {
+                    hashMap.put(s.getOwner(), 1);
+                }
+            }
+        }
+
+        int max = 0;
+        for(Map.Entry<String, Integer> entry : hashMap.entrySet()) {
+            if(entry.getValue() > max) {
+                max = entry.getValue();
+            }
+        }
+        int max2 = 0;
+        for(Map.Entry<String, Integer> entry : hashMap.entrySet()) {
+            if(entry.getValue() < max && entry.getValue() > max2) {
+                max2 = entry.getValue();
+            }
+        }
+        List<String> players = new ArrayList<>();
+        for(Map.Entry<String, Integer> entry : hashMap.entrySet()) {
+            if(entry.getValue() == max2) {
+                players.add(entry.getKey());
+            }
+        }
+        return players;
+
+    }
+
     public int compareTo(Hotel h) {
         return tileList.getSize() - h.tileList.getSize();
+    }
+
+    public boolean equals(Hotel h) {
+        return compareTo(h) == 0;
     }
 
     public void printStocks(Player p) {
